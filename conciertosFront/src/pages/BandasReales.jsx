@@ -23,7 +23,8 @@ const defaultForm = {
 export default function BandasReales() {
   const { data: bandas, loading, error, refetch } = useFetchData("bandasReales/obtenerTodas");
   const [busqueda, setBusqueda] = useState("");
-  
+  const [bandasFiltradas, setBandasFiltradas] = useState([]);
+
   const {
     isOpen: showAgregar,
     formData: form,
@@ -31,7 +32,7 @@ export default function BandasReales() {
     openModal: openAgregar,
     closeModal: closeAgregar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showEditar,
     formData: editForm,
@@ -40,7 +41,7 @@ export default function BandasReales() {
     openModal: openEditar,
     closeModal: closeEditar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showConfirmar,
     selectedItem: bandaToDelete,
@@ -51,28 +52,24 @@ export default function BandasReales() {
   const buscarPorNombre = async () => {
     if (!busqueda.trim()) {
       refetch();
+      setBandasFiltradas([]);
       return;
     }
+    
     try {
       const res = await fetch(
         `https://conciertosback.onrender.com/conciertosBaraticos/bandasReales/obtenerPorNombre/${busqueda}`
       );
-      
       if (!res.ok) {
         throw new Error(`Error: ${res.status}`);
       }
-      
       const data = await res.json();
-      
       if (!data) {
         toast.warning("No se encontraron bandas con ese nombre");
         return;
       }
-      
-      // Asegurarnos que siempre trabajamos con un array
       const bandasData = Array.isArray(data) ? data : [data];
-      setBandas(bandasData);
-      
+      setBandasFiltradas(bandasData);
     } catch (error) {
       console.error("Error al buscar banda:", error);
       toast.error(`Error al buscar: ${error.message}`);
@@ -93,14 +90,13 @@ export default function BandasReales() {
           }),
         }
       );
-      
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      
       toast.success("Banda agregada correctamente 🎸");
       closeAgregar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al agregar banda:", error);
       toast.error(`Error al agregar: ${error.message}`);
@@ -121,14 +117,13 @@ export default function BandasReales() {
           }),
         }
       );
-      
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      
       toast.success("Banda actualizada correctamente");
       closeEditar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al editar banda:", error);
       toast.error(`Error al actualizar: ${error.message}`);
@@ -143,26 +138,24 @@ export default function BandasReales() {
           method: "DELETE",
         }
       );
-      
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
-      
       toast.success("Banda eliminada correctamente");
       closeConfirmar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al eliminar banda:", error);
       toast.error(`Error al eliminar: ${error.message}`);
     }
   };
 
-  // Si hay error al cargar los datos iniciales
   if (error) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500">Error al cargar las bandas: {error}</p>
-        <button 
+        <button
           onClick={refetch}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
         >
@@ -172,7 +165,6 @@ export default function BandasReales() {
     );
   }
 
-  // Mientras se cargan los datos
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -181,19 +173,20 @@ export default function BandasReales() {
     );
   }
 
+  const bandasAMostrar = busqueda.trim() ? bandasFiltradas : bandas;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <SearchBar
           value={busqueda}
-          onChange={setBusqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           onSearch={buscarPorNombre}
           placeholder="Buscar banda por nombre..."
         />
-        
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={openAgregar}
+          onClick={() => openAgregar()}
         >
           + Agregar Banda Real
         </button>
@@ -224,13 +217,13 @@ export default function BandasReales() {
         nombre={bandaToDelete?.nombre}
       />
 
-      {bandas.length === 0 ? (
+      {bandasAMostrar.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           No se encontraron bandas reales. ¡Agrega una nueva!
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {bandas.map((banda) => (
+          {bandasAMostrar.map((banda) => (
             <BandaCard
               key={banda._id}
               item={banda}
