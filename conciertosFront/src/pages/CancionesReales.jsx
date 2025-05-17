@@ -23,7 +23,8 @@ const defaultForm = {
 export default function CancionesReales() {
   const { data: canciones, refetch } = useFetchData("canciones/obtenerTodas");
   const [busqueda, setBusqueda] = useState("");
-  
+  const [cancionesFiltradas, setCancionesFiltradas] = useState([]);
+
   const {
     isOpen: showAgregar,
     formData: form,
@@ -31,7 +32,7 @@ export default function CancionesReales() {
     openModal: openAgregar,
     closeModal: closeAgregar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showEditar,
     formData: editForm,
@@ -40,7 +41,7 @@ export default function CancionesReales() {
     openModal: openEditar,
     closeModal: closeEditar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showConfirmar,
     selectedItem: cancionToDelete,
@@ -51,16 +52,19 @@ export default function CancionesReales() {
   const buscarPorTitulo = async () => {
     if (!busqueda.trim()) {
       refetch();
+      setCancionesFiltradas([]);
       return;
     }
+    
     try {
       const res = await fetch(
         `https://conciertosback.onrender.com/conciertosBaraticos/canciones/obtenerPorTitulo/${busqueda}`
       );
       const data = await res.json();
-      setCanciones(Array.isArray(data) ? data : [data]);
+      setCancionesFiltradas(Array.isArray(data) ? data : [data]);
     } catch (error) {
       console.error("Error al buscar canción:", error);
+      setCancionesFiltradas([]);
     }
   };
 
@@ -76,6 +80,7 @@ export default function CancionesReales() {
       );
       closeAgregar();
       refetch();
+      setCancionesFiltradas([]);
     } catch (error) {
       console.error("Error al agregar canción:", error);
     }
@@ -93,6 +98,7 @@ export default function CancionesReales() {
       );
       closeEditar();
       refetch();
+      setCancionesFiltradas([]);
     } catch (error) {
       console.error("Error al editar canción:", error);
     }
@@ -108,24 +114,26 @@ export default function CancionesReales() {
       );
       closeConfirmar();
       refetch();
+      setCancionesFiltradas([]);
     } catch (error) {
       console.error("Error al eliminar canción:", error);
     }
   };
+
+  const cancionesAMostrar = busqueda.trim() ? cancionesFiltradas : canciones;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <SearchBar
           value={busqueda}
-          onChange={setBusqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           onSearch={buscarPorTitulo}
           placeholder="Buscar canción por título..."
         />
-        
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={openAgregar}
+          onClick={() => openAgregar()}
         >
           + Agregar Canción
         </button>
@@ -157,7 +165,7 @@ export default function CancionesReales() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {canciones.map((cancion) => (
+        {cancionesAMostrar.map((cancion) => (
           <CancionCard
             key={cancion._id || cancion.titulo}
             item={cancion}

@@ -22,7 +22,8 @@ const defaultForm = {
 export default function Discografias() {
   const { data: discografias, refetch } = useFetchData("discografias/obtenerTodas");
   const [busqueda, setBusqueda] = useState("");
-  
+  const [discografiasFiltradas, setDiscografiasFiltradas] = useState([]);
+
   const {
     isOpen: showAgregar,
     formData: form,
@@ -30,7 +31,7 @@ export default function Discografias() {
     openModal: openAgregar,
     closeModal: closeAgregar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showEditar,
     formData: editForm,
@@ -39,7 +40,7 @@ export default function Discografias() {
     openModal: openEditar,
     closeModal: closeEditar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showConfirmar,
     selectedItem: discografiaToDelete,
@@ -50,16 +51,19 @@ export default function Discografias() {
   const buscarPorTitulo = async () => {
     if (!busqueda.trim()) {
       refetch();
+      setDiscografiasFiltradas([]);
       return;
     }
+    
     try {
       const res = await fetch(
         `https://conciertosback.onrender.com/conciertosBaraticos/discografias/obtenerPorTitulo/${busqueda}`
       );
       const data = await res.json();
-      setDiscografias(data ? [data] : []);
+      setDiscografiasFiltradas(data ? [data] : []);
     } catch (error) {
       console.error("Error al buscar discografía:", error);
+      setDiscografiasFiltradas([]);
     }
   };
 
@@ -78,6 +82,7 @@ export default function Discografias() {
       );
       closeAgregar();
       refetch();
+      setDiscografiasFiltradas([]);
     } catch (error) {
       console.error("Error al agregar discografía:", error);
     }
@@ -98,6 +103,7 @@ export default function Discografias() {
       );
       closeEditar();
       refetch();
+      setDiscografiasFiltradas([]);
     } catch (error) {
       console.error("Error al editar discografía:", error);
     }
@@ -113,24 +119,26 @@ export default function Discografias() {
       );
       closeConfirmar();
       refetch();
+      setDiscografiasFiltradas([]);
     } catch (error) {
       console.error("Error al eliminar discografía:", error);
     }
   };
+
+  const discografiasAMostrar = busqueda.trim() ? discografiasFiltradas : discografias;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <SearchBar
           value={busqueda}
-          onChange={setBusqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           onSearch={buscarPorTitulo}
           placeholder="Buscar discografía por título..."
         />
-        
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={openAgregar}
+          onClick={() => openAgregar()}
         >
           + Agregar Discografía
         </button>
@@ -162,7 +170,7 @@ export default function Discografias() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {discografias.map((discografia) => (
+        {discografiasAMostrar.map((discografia) => (
           <DiscografiaCard
             key={discografia._id}
             item={discografia}

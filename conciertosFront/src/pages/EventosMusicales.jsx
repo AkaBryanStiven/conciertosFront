@@ -20,7 +20,8 @@ const defaultForm = {
 export default function EventosMusicales() {
   const { data: eventos, refetch } = useFetchData("eventos/obtenerTodos");
   const [busqueda, setBusqueda] = useState("");
-  
+  const [eventosFiltrados, setEventosFiltrados] = useState([]);
+
   const {
     isOpen: showAgregar,
     formData: form,
@@ -28,7 +29,7 @@ export default function EventosMusicales() {
     openModal: openAgregar,
     closeModal: closeAgregar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showEditar,
     formData: editForm,
@@ -37,7 +38,7 @@ export default function EventosMusicales() {
     openModal: openEditar,
     closeModal: closeEditar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showConfirmar,
     selectedItem: eventoToDelete,
@@ -48,16 +49,19 @@ export default function EventosMusicales() {
   const buscarPorNombre = async () => {
     if (!busqueda.trim()) {
       refetch();
+      setEventosFiltrados([]);
       return;
     }
+    
     try {
       const res = await fetch(
         `https://conciertosback.onrender.com/conciertosBaraticos/eventos/obtenerPorNombre/${busqueda}`
       );
       const data = await res.json();
-      setEventos(data ? [data] : []);
+      setEventosFiltrados(data ? [data] : []);
     } catch (error) {
       console.error("Error al buscar evento:", error);
+      setEventosFiltrados([]);
     }
   };
 
@@ -76,6 +80,7 @@ export default function EventosMusicales() {
       );
       closeAgregar();
       refetch();
+      setEventosFiltrados([]);
     } catch (error) {
       console.error("Error al agregar evento:", error);
     }
@@ -96,6 +101,7 @@ export default function EventosMusicales() {
       );
       closeEditar();
       refetch();
+      setEventosFiltrados([]);
     } catch (error) {
       console.error("Error al editar evento:", error);
     }
@@ -111,24 +117,26 @@ export default function EventosMusicales() {
       );
       closeConfirmar();
       refetch();
+      setEventosFiltrados([]);
     } catch (error) {
       console.error("Error al eliminar evento:", error);
     }
   };
+
+  const eventosAMostrar = busqueda.trim() ? eventosFiltrados : eventos;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <SearchBar
           value={busqueda}
-          onChange={setBusqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           onSearch={buscarPorNombre}
           placeholder="Buscar evento por nombre..."
         />
-        
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={openAgregar}
+          onClick={() => openAgregar()}
         >
           + Agregar Evento
         </button>
@@ -160,7 +168,7 @@ export default function EventosMusicales() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {eventos.map((evento) => (
+        {eventosAMostrar.map((evento) => (
           <EventoCard
             key={evento._id}
             item={evento}
