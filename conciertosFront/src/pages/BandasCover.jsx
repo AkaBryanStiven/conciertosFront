@@ -7,7 +7,6 @@ import ModalEditar from "../components/modals/ModalEditar";
 import ModalConfirmar from "../components/modals/ModalConfirmar";
 import SearchBar from "../components/shared/SearchBar";
 
-
 const defaultForm = {
   nombre: "",
   nombre_inspirado_en: "",
@@ -24,7 +23,8 @@ const defaultForm = {
 export default function BandasCover() {
   const { data: bandas, refetch } = useFetchData("bandas/obtenerTodas");
   const [busqueda, setBusqueda] = useState("");
-  
+  const [bandasFiltradas, setBandasFiltradas] = useState([]);
+
   const {
     isOpen: showAgregar,
     formData: form,
@@ -32,7 +32,7 @@ export default function BandasCover() {
     openModal: openAgregar,
     closeModal: closeAgregar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showEditar,
     formData: editForm,
@@ -41,7 +41,7 @@ export default function BandasCover() {
     openModal: openEditar,
     closeModal: closeEditar,
   } = useModal(defaultForm);
-  
+
   const {
     isOpen: showConfirmar,
     selectedItem: bandaToDelete,
@@ -52,16 +52,19 @@ export default function BandasCover() {
   const buscarPorNombre = async () => {
     if (!busqueda.trim()) {
       refetch();
+      setBandasFiltradas([]);
       return;
     }
+    
     try {
       const res = await fetch(
         `https://conciertosback.onrender.com/conciertosBaraticos/bandas/obtenerPorNombre/${busqueda}`
       );
       const data = await res.json();
-      setBandas(data);
+      setBandasFiltradas(Array.isArray(data) ? data : [data]);
     } catch (error) {
       console.error("Error al buscar banda:", error);
+      setBandasFiltradas([]);
     }
   };
 
@@ -77,6 +80,7 @@ export default function BandasCover() {
       );
       closeAgregar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al agregar banda:", error);
     }
@@ -94,6 +98,7 @@ export default function BandasCover() {
       );
       closeEditar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al editar banda:", error);
     }
@@ -109,24 +114,26 @@ export default function BandasCover() {
       );
       closeConfirmar();
       refetch();
+      setBandasFiltradas([]);
     } catch (error) {
       console.error("Error al eliminar banda:", error);
     }
   };
+
+  const bandasAMostrar = busqueda.trim() ? bandasFiltradas : bandas;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <SearchBar
           value={busqueda}
-          onChange={setBusqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
           onSearch={buscarPorNombre}
           placeholder="Buscar banda por nombre..."
         />
-        
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={openAgregar}
+          onClick={() => openAgregar()} // Asegurarse de no pasar el evento
         >
           + Agregar Banda
         </button>
@@ -158,7 +165,7 @@ export default function BandasCover() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {bandas.map((banda) => (
+        {bandasAMostrar.map((banda) => (
           <BandaCard
             key={banda.idBanda}
             item={banda}

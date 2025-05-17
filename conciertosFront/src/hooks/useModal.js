@@ -7,7 +7,11 @@ export function useModal(initialData = {}) {
 
   const openModal = (item = null) => {
     setSelectedItem(item);
-    if (item) setFormData(item);
+    if (item) {
+      setFormData(item);
+    } else {
+      setFormData(initialData); // Resetear al formulario inicial cuando no hay item
+    }
     setIsOpen(true);
   };
 
