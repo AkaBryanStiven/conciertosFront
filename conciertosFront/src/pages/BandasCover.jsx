@@ -133,7 +133,7 @@ export default function BandasCover() {
         />
         <button
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full transition-all"
-          onClick={() => openAgregar()} // Asegurarse de no pasar el evento
+          onClick={() => openAgregar()}
         >
           + Agregar Banda
         </button>
